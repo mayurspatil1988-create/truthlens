@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>TruthLens - Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#030712;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:36px 28px;width:100%;max-width:420px;backdrop-filter:blur(12px)}
+.logo{text-align:center;margin-bottom:28px}
+.logo-name{font-size:1.8rem;font-weight:900;color:white;letter-spacing:-0.03em}
+.logo-name span{background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.tagline{color:rgba(255,255,255,0.35);font-size:0.85rem;margin-top:4px}
+input{width:100%;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px 16px;color:white;font-family:'Inter',sans-serif;font-size:0.9rem;outline:none;margin-bottom:12px;transition:border-color 0.2s}
+input:focus{border-color:rgba(96,165,250,0.5)}
+input::placeholder{color:rgba(255,255,255,0.2)}
+.btn{width:100%;padding:15px;border:none;border-radius:12px;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;transition:all 0.2s;margin-bottom:10px}
+.btn-primary{background:linear-gradient(135deg,#2563eb,#7c3aed);color:white}
+.btn-primary:hover{opacity:0.9;transform:translateY(-1px)}
+.btn-google{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;gap:10px}
+.btn-google:hover{background:rgba(255,255,255,0.1)}
+.btn-phone{background:rgba(96,165,250,0.1);color:#60a5fa;border:1px solid rgba(96,165,250,0.2)}
+.btn-phone:hover{background:rgba(96,165,250,0.2)}
+.divider{display:flex;align-items:center;gap:12px;margin:16px 0;color:rgba(255,255,255,0.2);font-size:0.8rem}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.08)}
+.toggle{text-align:center;color:rgba(255,255,255,0.4);font-size:0.82rem;margin-top:16px}
+.toggle a{color:#60a5fa;cursor:pointer;text-decoration:none}
+.error{color:#f87171;font-size:0.8rem;margin-bottom:10px;display:none}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="card">
+<div class="logo">
+<div class="logo-name">Truth<span>Lens</span></div>
+<div class="tagline">See the truth behind every claim.</div>
+</div>
+<div id="emailSection">
+<input type="email" id="email" placeholder="Email address">
+<input type="password" id="password" placeholder="Password">
+<div class="error" id="errorMsg"></div>
+<button class="btn btn-primary" onclick="handleEmail()">Sign In / Sign Up</button>
+<div class="divider">or</div>
+<button class="btn btn-google" onclick="handleGoogle()">
+<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18"> Continue with Google
+</button>
+<button class="btn btn-phone" onclick="showPhone()">📱 Continue with Phone</button>
+</div>
+<div id="phoneSection" class="hidden">
+<input type="tel" id="phoneNum" placeholder="+91 9876543210">
+<div id="recaptcha-container"></div>
+<button class="btn btn-primary" onclick="sendOTP()">Send OTP</button>
+<div id="otpSection" class="hidden">
+<input type="text" id="otpCode" placeholder="Enter OTP">
+<button class="btn btn-primary" onclick="verifyOTP()">Verify OTP</button>
+</div>
+<button class="btn btn-google" onclick="showEmail()">← Back</button>
+</div>
+<div class="toggle"><a onclick="skipLogin()">Skip login for now →</a></div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script>
+var firebaseConfig={apiKey:"AIzaSyC8PZLLm2DUmQhUbXr-XO46PjptzGlq7Q8",authDomain:"truthlens-e1bee.firebaseapp.com",projectId:"truthlens-e1bee",appId:"1:217767982737:web:6e88d22ef22b045de43130"};
+firebase.initializeApp(firebaseConfig);
+var auth=firebase.auth();
+
+function goHome(){window.location.replace("http://127.0.0.1:5000");}
+
+function showError(msg){
+var e=document.getElementById("errorMsg");
+e.textContent=msg;
+e.style.display="block";}
+
+function handleEmail(){
+var email=document.getElementById("email").value;
+var pass=document.getElementById("password").value;
+if(!email||!pass){showError("Please fill all fields");return;}
+auth.signInWithEmailAndPassword(email,pass)
+.then(function(r){
+localStorage.setItem("tl_user","loggedin");
+localStorage.setItem("tl_username",r.user.email);
+goHome();
+}).catch(function(){
+auth.createUserWithEmailAndPassword(email,pass)
+.then(function(r){
+localStorage.setItem("tl_user","loggedin");
+localStorage.setItem("tl_username",r.user.email);
+goHome();
+}).catch(function(e){showError(e.message);});
+});}
+
+function handleGoogle(){
+var provider=new firebase.auth.GoogleAuthProvider();
+auth.signInWithPopup(provider)
+.then(function(r){
+localStorage.setItem("tl_user","loggedin");
+localStorage.setItem("tl_username",r.user.displayName||r.user.email);
+goHome();
+}).catch(function(e){showError(e.message);});}
+
+function showPhone(){
+document.getElementById("emailSection").classList.add("hidden");
+document.getElementById("phoneSection").classList.remove("hidden");
+window.recaptchaVerifier=new firebase.auth.RecaptchaVerifier("recaptcha-container",{"size":"invisible"});}
+
+function showEmail(){
+document.getElementById("phoneSection").classList.add("hidden");
+document.getElementById("emailSection").classList.remove("hidden");}
+
+function sendOTP(){
+var phone=document.getElementById("phoneNum").value;
+auth.signInWithPhoneNumber(phone,window.recaptchaVerifier)
+.then(function(result){
+window.confirmResult=result;
+document.getElementById("otpSection").classList.remove("hidden");
+}).catch(function(e){showError(e.message);});}
+
+function verifyOTP(){
+var code=document.getElementById("otpCode").value;
+window.confirmResult.confirm(code)
+.then(function(r){
+localStorage.setItem("tl_user","loggedin");
+localStorage.setItem("tl_username",r.user.phoneNumber);
+goHome();
+}).catch(function(e){showError(e.message);});}
+
+function skipLogin(){
+localStorage.setItem("tl_user","guest");
+localStorage.setItem("tl_username","Guest");
+goHome();}
+</script>
+</body>
+</html>

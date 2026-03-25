@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>TruthLens – AI Fact Checker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Inter",sans-serif;background:#030712;color:#fff;min-height:100vh;overflow-x:hidden}
+canvas{position:fixed;top:0;left:0;z-index:0;pointer-events:none}
+.page{position:relative;z-index:1;max-width:540px;margin:0 auto;padding:28px 18px 60px}
+.nav{display:flex;align-items:center;justify-content:center;padding:12px 0 0;margin-bottom:48px}
+.nav-logo{display:flex;align-items:center;gap:11px}
+.nav-icon{width:40px;height:40px;background:linear-gradient(135deg,#2563eb,#7c3aed);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:0 4px 16px rgba(37,99,235,0.35)}
+.nav-name{font-size:1.45rem;font-weight:900;letter-spacing:-0.03em;background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero{text-align:center;margin-bottom:44px}
+.badge{display:inline-flex;align-items:center;gap:8px;background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.2);border-radius:100px;padding:7px 18px;font-size:0.72rem;font-weight:700;color:#60a5fa;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:26px}
+.dot{width:7px;height:7px;background:#4ade80;border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(1.5)}}
+.hero h1{font-size:2.8rem;font-weight:900;line-height:1.08;letter-spacing:-0.04em;margin-bottom:18px}
+.hero h1 .grad{background:linear-gradient(90deg,#60a5fa,#a78bfa,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:rgba(255,255,255,0.38);font-size:0.92rem;line-height:1.7;font-weight:300}
+.card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:24px;padding:26px;margin-bottom:14px;backdrop-filter:blur(12px)}
+.lbl{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.25);margin-bottom:11px;display:block}
+textarea{width:100%;background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.07);border-radius:15px;padding:15px 17px;color:#fff;font-family:"Inter",sans-serif;font-size:0.92rem;line-height:1.65;resize:none;outline:none;transition:all 0.28s}
+textarea::placeholder{color:rgba(255,255,255,0.16)}
+textarea:focus{border-color:rgba(96,165,250,0.45);background:rgba(255,255,255,0.06);box-shadow:0 0 0 4px rgba(37,99,235,0.09)}
+.char{text-align:right;font-size:0.7rem;color:rgba(255,255,255,0.18);margin-top:7px}
+.btn{width:100%;margin-top:14px;padding:17px;background:linear-gradient(135deg,#2563eb,#7c3aed);border:none;border-radius:15px;color:#fff;font-family:"Inter",sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;transition:all 0.25s;letter-spacing:0.01em;box-shadow:0 4px 20px rgba(37,99,235,0.25)}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(37,99,235,0.4)}
+.btn:active{transform:translateY(0)}
+.loading{display:none;text-align:center;padding:36px 0}
+.ring{width:46px;height:46px;border:3px solid rgba(255,255,255,0.05);border-top:3px solid #60a5fa;border-radius:50%;animation:spin 0.85s linear infinite;margin:0 auto 18px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-t{font-size:0.92rem;font-weight:600;color:rgba(255,255,255,0.6);margin-bottom:5px}
+.loading-s{font-size:0.78rem;color:rgba(255,255,255,0.25)}
+.results{display:none;animation:fadeUp 0.45s cubic-bezier(0.16,1,0.3,1)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.score-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:22px;margin-bottom:12px}
+.score-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.score-lbl{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.25);margin-bottom:5px}
+.score-num{font-size:2.8rem;font-weight:900;line-height:1;letter-spacing:-0.03em}
+.verdict-pill{font-size:0.75rem;font-weight:700;padding:7px 15px;border-radius:100px;letter-spacing:0.03em;margin-top:4px}
+.bar-track{height:5px;background:rgba(255,255,255,0.06);border-radius:100px;overflow:hidden;margin-bottom:7px}
+.bar-fill{height:100%;border-radius:100px;width:0%;transition:width 1.3s cubic-bezier(0.34,1.56,0.64,1)}
+.bar-ends{display:flex;justify-content:space-between;font-size:0.65rem;color:rgba(255,255,255,0.2)}
+.divider{height:1px;background:rgba(255,255,255,0.05);margin:18px 0}
+.info-row{display:flex;gap:14px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+.info-row:last-child{border-bottom:none}
+.info-lbl{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.22);min-width:72px;padding-top:2px}
+.info-val{font-size:0.86rem;color:rgba(255,255,255,0.68);line-height:1.65;flex:1}
+.src-item{display:flex;align-items:flex-start;gap:8px;font-size:0.82rem;color:rgba(255,255,255,0.45);padding:5px 0;line-height:1.5}
+.src-dot{width:5px;height:5px;background:#60a5fa;border-radius:50%;flex-shrink:0;margin-top:6px}
+.btn-reset{width:100%;padding:14px;background:transparent;border:1px solid rgba(255,255,255,0.07);border-radius:15px;color:rgba(255,255,255,0.3);font-family:"Inter",sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.22s;margin-top:4px}
+.btn-reset:hover{background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6)}
+.footer{text-align:center;margin-top:36px;font-size:0.7rem;color:rgba(255,255,255,0.1)}
+</style>
+</head>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+
+  const firebaseConfig = {
+    apiKey: "YOUR_KEY",
+    authDomain: "truthlens-e1bee.firebaseapp.com",
+    projectId: "truthlens-e1bee",
+    storageBucket: "truthlens-e1bee.firebasestorage.app",
+    messagingSenderId: "217767982737",
+    appId: "1:217767982737:web:6e88d22ef22b045de43130"
+  };
+
+  const app = initializeApp(firebaseConfig);
+
+  console.log("Firebase connected");
+</script>
+<script>
+function login() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  if(email === "" || password === "") {
+    alert("Enter email and password");
+    return;
+  }
+
+  alert("Login system coming next 🚀");
+}
+</script>
+<body><div id="loginBox" style="text-align:center; margin-top:20px;">
+  <input type="email" id="email" placeholder="Enter email"><br><br>
+  <input type="password" id="password" placeholder="Enter password"><br><br>
+  <button onclick="login()">Login</button>
+</div>
+<canvas id="c"></canvas>
+<div class="page">
+<nav class="nav">
+<div class="nav-logo">
+<div style="display:flex;align-items:center;gap:14px">
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0%" stop-color="#2563eb"/>
+<stop offset="100%" stop-color="#7c3aed"/>
+</linearGradient>
+<linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0%" stop-color="#60a5fa"/>
+<stop offset="100%" stop-color="#a78bfa"/>
+</linearGradient>
+<filter id="glow">
+<feGaussianBlur stdDeviation="1.5" result="blur"/>
+<feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+</filter>
+</defs>
+<circle cx="20" cy="20" r="14" fill="url(#g1)" opacity="0.15"/>
+<circle cx="20" cy="20" r="14" stroke="url(#g2)" stroke-width="2.5" fill="none"/>
+<circle cx="20" cy="20" r="9" fill="url(#g1)" opacity="0.3"/>
+<polyline points="14,20 18,25 26,15" stroke="#4ade80" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" fill="none" filter="url(#glow)"/>
+<line x1="30" y1="30" x2="43" y2="43" stroke="url(#g2)" stroke-width="3.5" stroke-linecap="round"/>
+<circle cx="43" cy="43" r="2.5" fill="#a78bfa"/>
+</svg>
+<div>
+<div style="font-size:1.5rem;font-weight:900;letter-spacing:-0.04em;line-height:1">
+<span style="color:white">Truth</span><span style="background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Lens</span>
+</div>
+<div style="font-size:0.58rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.28);margin-top:2px">AI Fact Checker</div>
+</div>
+</div>
+</div>
+</nav>
+<div class="hero">
+<div class="badge"><span class="dot"></span>AI Powered Fact Checker</div>
+<h1>See the <span class="grad">truth</span><br/>behind every claim.</h1>
+<p>Paste any statement, headline or rumour.<br/>Get an instant AI verdict in seconds.</p>
+</div>
+<div class="card">
+<label class="lbl">Your Claim</label>
+<textarea id="claim" rows="4" placeholder="e.g. The Great Wall of China is visible from space..." maxlength="500"></textarea>
+<div class="char"><span id="cc">0</span>/500</div>
+<button class="btn" onclick="checkClaim()">⚡ Check Truth</button>
+<div class="loading" id="loading">
+<div class="ring"></div>
+<div class="loading-t">Analyzing claim...</div>
+<div class="loading-s">Cross-referencing knowledge & evaluating logic</div>
+</div>
+<div class="results" id="results">
+<div class="score-card">
+<div class="score-top">
+<div>
+<div class="score-lbl">Credibility Score</div>
+<div class="score-num" id="sn">--</div>
+</div>
+<div class="verdict-pill" id="vp">--</div>
+</div>
+<div class="bar-track"><div class="bar-fill" id="bf"></div></div>
+<div class="bar-ends"><span>0 – False</span><span>100 – True</span></div>
+<div class="divider"></div>
+<div class="info-row">
+<div class="info-lbl">Analysis</div>
+<div class="info-val" id="exp"></div>
+</div>
+<div class="info-row" id="srcrow">
+<div class="info-lbl">Sources</div>
+<div class="info-val" id="srclist"></div>
+</div>
+</div>
+<button class="btn-reset" onclick="resetForm()">← Check another claim</button>
+</div>
+</div>
+<div class="footer">TruthLens uses AI · Always verify critical claims independently</div>
+</div>
+<script>
+var ca=document.getElementById("c"),ctx=ca.getContext("2d"),pts=[];
+function resize(){ca.width=window.innerWidth;ca.height=window.innerHeight}
+resize();window.addEventListener("resize",resize);
+for(var i=0;i<55;i++)pts.push({x:Math.random()*window.innerWidth,y:Math.random()*window.innerHeight,vx:(Math.random()-0.5)*0.25,vy:(Math.random()-0.5)*0.25,r:Math.random()*1.2+0.4});
+function draw(){
+ctx.clearRect(0,0,ca.width,ca.height);
+pts.forEach(function(p){
+p.x+=p.vx;p.y+=p.vy;
+if(p.x<0||p.x>ca.width)p.vx*=-1;
+if(p.y<0||p.y>ca.height)p.vy*=-1;
+ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+ctx.fillStyle="rgba(96,165,250,0.45)";ctx.fill();
+});
+for(var i=0;i<pts.length;i++){
+for(var j=i+1;j<pts.length;j++){
+var d=Math.hypot(pts[i].x-pts[j].x,pts[i].y-pts[j].y);
+if(d<110){
+ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);
+ctx.strokeStyle="rgba(96,165,250,"+(0.12*(1-d/110))+")";
+ctx.lineWidth=0.5;ctx.stroke();
+}}}
+requestAnimationFrame(draw);}
+draw();
+document.getElementById("claim").addEventListener("input",function(){
+document.getElementById("cc").textContent=this.value.length;});
+</script>
+<script src="app.js"></script>
+</body>
+</html>

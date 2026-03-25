@@ -1,0 +1,8 @@
+0
+config.js
+*.env
+.env
+__pycache__/
+*.pyc
+newscript.txt
+firebase_config.txt
