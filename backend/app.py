@@ -54,6 +54,8 @@ def check_claim():
     data=request.get_json()
     claim=data.get("claim","")
     articles=data.get("articles",[])
+    if len(articles)==0:
+        return jsonify({"truth_score":0,"verdict":"Unverifiable","bias":"Neutral","explanation":"TruthLens could not find any verified sources covering this claim at this time. This may be because the claim is too recent, too localised, or not covered by our verified source network. Please check reliable sources directly.","category":"General","claim_type":"unverifiable","sources":[]})
     ctx="Today is April 2026. RCB won IPL 2025. India won Champions Trophy 2025. India won T20 WC 2026. Donald Trump is US President 2026. FIRST check if this claim is satire or parody (exaggerated, absurd, joke, meme). If satire, return claim_type=satire immediately. Otherwise classify claim_type as verifiable_fact, opinion, or too_vague. Then classify into EXACTLY ONE category from: Cricket, Football, Other Sports, Indian National Politics, State Politics, International Politics, Elections, Bollywood, South Cinema, Music, Ott & Web Series, Health & Medicine, Covid & Epidemics, Science & Space, Environment & Climate, Indian Economy, Business & Corporates, Cryptocurrency & Finance, Jobs & Employment, Religion & Communal, Caste & Reservation, Viral Social Media Claims, Gender & Society, Ai & Technology, Cybercrime & Scams, General. Reply ONLY with valid JSON with keys credibility_score, verdict, bias, explanation, category, claim_type. Claim: "+claim
     if articles:
         ctx+=" NEWS: "
