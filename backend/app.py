@@ -1,5 +1,6 @@
 import os,json,requests
 from flask import Flask,request,jsonify,send_from_directory
+from source_routing import SOURCE_ROUTING
 from flask_cors import CORS
 app=Flask(__name__)
 CORS(app)
@@ -33,13 +34,13 @@ def get_news():
         r=requests.get("https://gnews.io/api/v4/search",params={"q":q,"lang":"en","max":3,"apikey":GNEWS_KEY},timeout=4)
         if r.json().get("articles"):
             for a in r.json()["articles"]:
-                articles.append({"title":a["title"],"source":a["source"]["name"]})
+                articles.append({"title":a["title"],"source":a["source"]["name"],"url":a.get("url","")})
     except:pass
     try:
         r=requests.get("https://newsdata.io/api/1/news",params={"q":q,"language":"en","prioritydomain":"top","apikey":NEWSDATA_KEY},timeout=4)
         if r.json().get("results"):
             for a in r.json()["results"][:3]:
-                articles.append({"title":a["title"],"source":a["source_id"]})
+                articles.append({"title":a["title"],"source":a["source_id"],"url":a.get("link","")})
     except:pass
     seen={}
     unique=[]
@@ -54,6 +55,11 @@ def check_claim():
     data=request.get_json()
     claim=data.get("claim","")
     articles=data.get("articles",[])
+    def get_domain(url):
+        try:
+            from urllib.parse import urlparse
+            return urlparse(url).netloc.replace("www.","")
+        except:return ""
     if len(articles)==0:
         return jsonify({"truth_score":0,"verdict":"Unverifiable","bias":"Neutral","explanation":"TruthLens could not find any verified sources covering this claim at this time. This may be because the claim is too recent, too localised, or not covered by our verified source network. Please check reliable sources directly.","category":"General","claim_type":"unverifiable","sources":[]})
     ctx="Today is April 2026. RCB won IPL 2025. India won Champions Trophy 2025. India won T20 WC 2026. Donald Trump is US President 2026. FIRST check if this claim is satire or parody (exaggerated, absurd, joke, meme). If satire, return claim_type=satire immediately. Otherwise classify claim_type as verifiable_fact, opinion, or too_vague. Then classify into EXACTLY ONE category from: Cricket, Football, Other Sports, Indian National Politics, State Politics, International Politics, Elections, Bollywood, South Cinema, Music, Ott & Web Series, Health & Medicine, Covid & Epidemics, Science & Space, Environment & Climate, Indian Economy, Business & Corporates, Cryptocurrency & Finance, Jobs & Employment, Religion & Communal, Caste & Reservation, Viral Social Media Claims, Gender & Society, Ai & Technology, Cybercrime & Scams, General. Reply ONLY with valid JSON with keys credibility_score, verdict, bias, explanation, category, claim_type. Claim: "+claim
@@ -82,8 +88,13 @@ def check_claim():
             return jsonify({"truth_score":0,"verdict":"Unverifiable","bias":"Neutral","explanation":"This claim is too vague to verify. Please provide more specific details.","category":result.get("category","General"),"claim_type":claim_type})
         if claim_type=="satire":
             return jsonify({"truth_score":0,"verdict":"Unverifiable","bias":"Neutral","explanation":"This claim appears to be satire or parody. TruthLens only verifies factual claims.","category":result.get("category","General"),"claim_type":claim_type})
-        result["category"]=result.get("category","General").strip().title()
+        category=result.get("category","General").strip().title()
+        allowed=SOURCE_ROUTING.get(category,SOURCE_ROUTING["General"])
+        filtered=[a for a in articles if any(d in a.get("url","") for d in allowed)]
+        if len(filtered)==0:filtered=articles
+        result["category"]=category
         result["claim_type"]=claim_type
+        result["filtered_sources"]=len(filtered)
         return jsonify(result)
     except Exception as ex:
         return jsonify({"truth_score":50,"verdict":"Not enough evidence","bias":"Unknown","explanation":"Could not analyze claim.","sources":[]})
