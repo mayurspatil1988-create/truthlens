@@ -31,13 +31,13 @@ def get_news():
     q=claim+" "+str(yr)
     articles=[]
     try:
-        r=requests.get("https://gnews.io/api/v4/search",params={"q":q,"lang":"en","max":3,"apikey":GNEWS_KEY},timeout=4)
+        r=requests.get("https://gnews.io/api/v4/search",params={"q":q,"lang":"en","max":3,"apikey":GNEWS_KEY},timeout=8)
         if r.json().get("articles"):
             for a in r.json()["articles"]:
                 articles.append({"title":a["title"],"source":a["source"]["name"],"url":a.get("url","")})
     except:pass
     try:
-        r=requests.get("https://newsdata.io/api/1/news",params={"q":q,"language":"en","prioritydomain":"top","apikey":NEWSDATA_KEY},timeout=4)
+        r=requests.get("https://newsdata.io/api/1/news",params={"q":q,"language":"en","prioritydomain":"top","apikey":NEWSDATA_KEY},timeout=8)
         if r.json().get("results"):
             for a in r.json()["results"][:3]:
                 articles.append({"title":a["title"],"source":a["source_id"],"url":a.get("link","")})
