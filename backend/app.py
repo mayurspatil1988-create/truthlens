@@ -54,7 +54,7 @@ def check_claim():
     data=request.get_json()
     claim=data.get("claim","")
     articles=data.get("articles",[])
-    ctx="Today is March 2026. RCB won IPL 2025. India won Champions Trophy 2025. India won T20 WC 2026. Donald Trump is US President 2026. Reply ONLY with valid JSON with keys credibility_score, verdict, bias, explanation. Claim: "+claim
+    ctx="Today is April 2026. RCB won IPL 2025. India won Champions Trophy 2025. India won T20 WC 2026. Donald Trump is US President 2026. FIRST check if this claim is satire or parody (exaggerated, absurd, joke, meme). If satire, return claim_type=satire immediately. Otherwise classify claim_type as verifiable_fact, opinion, or too_vague. Then classify into EXACTLY ONE category from: Cricket, Football, Other Sports, Indian National Politics, State Politics, International Politics, Elections, Bollywood, South Cinema, Music, Ott & Web Series, Health & Medicine, Covid & Epidemics, Science & Space, Environment & Climate, Indian Economy, Business & Corporates, Cryptocurrency & Finance, Jobs & Employment, Religion & Communal, Caste & Reservation, Viral Social Media Claims, Gender & Society, Ai & Technology, Cybercrime & Scams, General. Reply ONLY with valid JSON with keys credibility_score, verdict, bias, explanation, category, claim_type. Claim: "+claim
     if articles:
         ctx+=" NEWS: "
         for i,a in enumerate(articles):
@@ -73,6 +73,15 @@ def check_claim():
         content=content.replace(": True",":'True'").replace(": False",":'False'").replace(": Neutral",":'Neutral'").replace(": Left",":'Left'").replace(": Right",":'Right'")
         result=json.loads(content)
         result["truth_score"]=int(result.get("credibility_score",55))
+        claim_type=result.get("claim_type","verifiable_fact").strip().lower()
+        if claim_type=="opinion":
+            return jsonify({"truth_score":0,"verdict":"Unverifiable","bias":"Neutral","explanation":"This is a subjective claim or opinion. TruthLens only verifies factual claims.","category":result.get("category","General"),"claim_type":claim_type})
+        if claim_type=="too_vague":
+            return jsonify({"truth_score":0,"verdict":"Unverifiable","bias":"Neutral","explanation":"This claim is too vague to verify. Please provide more specific details.","category":result.get("category","General"),"claim_type":claim_type})
+        if claim_type=="satire":
+            return jsonify({"truth_score":0,"verdict":"Unverifiable","bias":"Neutral","explanation":"This claim appears to be satire or parody. TruthLens only verifies factual claims.","category":result.get("category","General"),"claim_type":claim_type})
+        result["category"]=result.get("category","General").strip().title()
+        result["claim_type"]=claim_type
         return jsonify(result)
     except Exception as ex:
         return jsonify({"truth_score":50,"verdict":"Not enough evidence","bias":"Unknown","explanation":"Could not analyze claim.","sources":[]})
