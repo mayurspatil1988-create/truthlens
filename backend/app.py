@@ -62,19 +62,25 @@ def check_claim():
         except:return ""
     if len(articles)==0:
         # Pre-check: ask Groq if this is a scientific/logical fact before returning Unverifiable
-        pre_ctx="Classify this claim ONLY. Reply with raw JSON, no markdown. Keys: claim_type (one of: scientific_fact, logical_fact, verifiable_fact, opinion, too_vague, satire), category. Claim: "+claim
+        pre_ctx="Reply with ONLY a JSON object, no markdown, no explanation. Example: {\"claim_type\":\"scientific_fact\"}. Classify this claim into exactly one claim_type: scientific_fact, logical_fact, verifiable_fact, opinion, too_vague, satire. Claim: "+claim
         try:
             pre_r=requests.post("https://api.groq.com/openai/v1/chat/completions",
                 headers={"Authorization":"Bearer "+GROQ_KEY,"Content-Type":"application/json"},
-                json={"model":"llama-3.3-70b-versatile","temperature":0.1,"max_tokens":60,
+                json={"model":"llama-3.3-70b-versatile","temperature":0.1,"max_tokens":50,
                     "messages":[{"role":"user","content":pre_ctx}]},timeout=8)
             pre_j=pre_r.json()
             pre_text=pre_j["choices"][0]["message"]["content"].strip()
+            pre_text=pre_text.replace("```json","").replace("```","").strip()
             import json as _json
             pre_result=_json.loads(pre_text)
             pre_type=pre_result.get("claim_type","")
         except:
             pre_type=""
+        # Also check by keywords in claim itself as fallback
+        claim_lower=claim.lower()
+        science_keywords=["sun rises","earth is","water boils","speed of light","gravity","planets","moon","atoms","evolution","dinosaur"]
+        if pre_type=="" and any(k in claim_lower for k in science_keywords):
+            pre_type="scientific_fact"
         if pre_type not in ("scientific_fact","logical_fact"):
             return jsonify({"truth_score":0,"verdict":"Unverifiable","bias":"Neutral","explanation":"TruthLens could not find any verified sources covering this claim at this time. This may be because the claim is too recent, too localised, or not covered by our verified source network. Please check reliable sources directly.","category":"General","claim_type":"unverifiable","sources":[]})
     ctx="Today is April 2026. RCB won IPL 2025. India won Champions Trophy 2025. India won T20 WC 2026. Donald Trump is US President 2026. FIRST check if this claim is satire or parody (exaggerated, absurd, joke, meme). If satire, return claim_type=satire immediately. Otherwise classify claim_type as verifiable_fact, opinion, or too_vague. Then classify into EXACTLY ONE category from: Cricket, Football, Other Sports, Indian National Politics, State Politics, International Politics, Elections, Bollywood, South Cinema, Music, Ott & Web Series, Health & Medicine, Covid & Epidemics, Science & Space, Environment & Climate, Indian Economy, Business & Corporates, Cryptocurrency & Finance, Jobs & Employment, Religion & Communal, Caste & Reservation, Viral Social Media Claims, Gender & Society, Ai & Technology, Cybercrime & Scams, General. Reply ONLY with raw JSON, no markdown, no code blocks. Use integer 0-100 for credibility_score. verdict must be exactly one of: True, False, Misleading, Unverifiable. JSON keys: credibility_score, verdict, bias, explanation, category, claim_type. Claim: "+claim
