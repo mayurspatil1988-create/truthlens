@@ -28,6 +28,7 @@ def get_news():
     data=request.get_json()
     claim=data.get("claim","")
     print("DEBUG GNEWS_KEY present:",bool(GNEWS_KEY),"NEWSDATA_KEY present:",bool(NEWSDATA_KEY),flush=True)
+    print("DEBUG GNEWS_KEY value:",GNEWS_KEY[:10] if GNEWS_KEY else "EMPTY",flush=True)
     yr=2026
     q=claim+" "+str(yr)
     articles=[]
