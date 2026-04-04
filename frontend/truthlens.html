@@ -269,7 +269,7 @@ return fetch('/check',{method:'POST',headers:{'Content-Type':'application/json'}
 })
 .then(function(r){return r.json();})
 .then(function(d){
-var score=parseInt(d.truth_score||d.credibility_score)||55;
+var score=parseInt(d.truth_score||d.credibility_score)||0;
 document.getElementById('sn').textContent=score+'%';
 var verdict=String(d.verdict||'Unknown');
 var vp=document.getElementById('vp');
