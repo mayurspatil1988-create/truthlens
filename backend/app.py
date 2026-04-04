@@ -74,7 +74,9 @@ def check_claim():
             headers={"Authorization":"Bearer "+GROQ_KEY,"Content-Type":"application/json"},
             json={"model":"llama-3.3-70b-versatile","temperature":0.3,"max_tokens":200,
                 "messages":[{"role":"user","content":ctx}]},timeout=10)
-        content=r.json()["choices"][0]["message"]["content"].strip()
+        rj=r.json()
+        print("DEBUG GROQ response:",str(rj)[:200],flush=True)
+        content=rj["choices"][0]["message"]["content"].strip()
         if "```" in content:
             content=content.split("```")[1]
             if content.startswith("json"):content=content[4:]
