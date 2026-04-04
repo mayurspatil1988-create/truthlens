@@ -77,12 +77,13 @@ def check_claim():
         rj=r.json()
         print("DEBUG GROQ response:",str(rj)[:200],flush=True)
         content=rj["choices"][0]["message"]["content"].strip()
+        print("DEBUG GROQ content:",content[:300],flush=True)
         if "```" in content:
             content=content.split("```")[1]
             if content.startswith("json"):content=content[4:]
         s=content.index("{");e=content.rindex("}")
         content=content[s:e+1]
-        content=content.replace(": True",":'True'").replace(": False",":'False'").replace(": Neutral",":'Neutral'").replace(": Left",":'Left'").replace(": Right",":'Right'")
+        content=content.replace(': True',':"True"').replace(': False',':"False"').replace(': Neutral',':"Neutral"').replace(': Left',':"Left"').replace(': Right',':"Right"')
         result=json.loads(content)
         result["truth_score"]=int(result.get("credibility_score",55))
         claim_type=result.get("claim_type","verifiable_fact").strip().lower()
