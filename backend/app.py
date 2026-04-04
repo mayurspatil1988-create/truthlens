@@ -76,10 +76,10 @@ def check_claim():
             pre_type=pre_result.get("claim_type","")
         except:
             pre_type=""
-        # Also check by keywords in claim itself as fallback
+        # Keyword override — always wins over Groq classification
         claim_lower=claim.lower()
-        science_keywords=["sun rises","earth is","water boils","speed of light","gravity","planets","moon","atoms","evolution","dinosaur"]
-        if pre_type=="" and any(k in claim_lower for k in science_keywords):
+        science_keywords=["sun rises","earth is","water boils","speed of light","gravity","planets","moon","atoms","evolution","dinosaur","earth revolves","earth orbits","humans are","birds can","fish can","ice melts","fire is hot"]
+        if any(k in claim_lower for k in science_keywords):
             pre_type="scientific_fact"
         if pre_type not in ("scientific_fact","logical_fact"):
             return jsonify({"truth_score":0,"verdict":"Unverifiable","bias":"Neutral","explanation":"TruthLens could not find any verified sources covering this claim at this time. This may be because the claim is too recent, too localised, or not covered by our verified source network. Please check reliable sources directly.","category":"General","claim_type":"unverifiable","sources":[]})
