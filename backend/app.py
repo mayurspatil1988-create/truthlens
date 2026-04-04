@@ -27,8 +27,6 @@ def js():
 def get_news():
     data=request.get_json()
     claim=data.get("claim","")
-    print("DEBUG GNEWS_KEY present:",bool(GNEWS_KEY),"NEWSDATA_KEY present:",bool(NEWSDATA_KEY),flush=True)
-    print("DEBUG GNEWS_KEY value:",GNEWS_KEY[:10] if GNEWS_KEY else "EMPTY",flush=True)
     yr=2026
     q=claim+" "+str(yr)
     articles=[]
@@ -75,9 +73,7 @@ def check_claim():
             json={"model":"llama-3.3-70b-versatile","temperature":0.3,"max_tokens":200,
                 "messages":[{"role":"user","content":ctx}]},timeout=10)
         rj=r.json()
-        print("DEBUG GROQ response:",str(rj)[:200],flush=True)
         content=rj["choices"][0]["message"]["content"].strip()
-        print("DEBUG GROQ content:",content[:300],flush=True)
         if "```" in content:
             content=content.split("```")[1]
             if content.startswith("json"):content=content[4:]
